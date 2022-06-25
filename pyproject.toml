@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "astro"
 version = "0.1.0"
-description = ""
+description = "Misc astronomy stuff"
 authors = ["Dragon Dave McKee <dave.mckee@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/dragondave/astro"
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
