@@ -1,0 +1,64 @@
+// Just move to everything by snapping rather than fluid motion
+StelMovementMgr.setAutoMoveDuration(0)
+
+grid_circles = 2 // 3 gives a 5x5 grid
+grid_step = 0.2 // degrees of arc
+init_dwell = 5
+dwell = 5
+stellarium_move_time= StelMovementMgr.getAutoMoveDuration() + 0.1 // how long to wait
+
+function get_moon() {
+  // Point at the moon. This takes over a second without setAutoMoveDuration(0)
+  core.selectObjectByName("Moon", false);
+  StelMovementMgr.setFlagTracking(true);
+  core.wait(stellarium_move_time);
+
+  // Get its position in RA/Dec. (TODO: move into loop?)
+  ra=core.getViewRaAngle()
+  dec=core.getViewDecAngle()
+  return ra, dec
+}
+
+core.debug("Start Init "+new Date())
+start_init = new Date().getTime();
+
+// Remove grid points, in case there's any left over from a stopped run
+CustomObjectMgr.removeCustomObjects();
+
+ra, dec = get_moon();
+
+end_init = new Date().getTime();
+diff = (end_init-start_init)/1000
+core.wait(init_dwell-diff)
+
+core.debug("Start Process "+new Date())
+
+grid_max = grid_circles - 1;
+for (x=-grid_max; x <= grid_max; x++) {
+  for (y=-grid_max; y <= grid_max; y++) {
+    start = new Date().getTime();
+    // Remove all the grid points.
+    CustomObjectMgr.removeCustomObjects();
+
+    // Reacquire Moon in stellarium
+    ra, dec = get_moon()
+
+    core.debug(x+","+y)
+    // Make a marker for each grid point and point at it.
+    CustomObjectMgr.addCustomObjectRaDec("Marker", ra+(x*grid_step), dec+(y*grid_step), isVisible=true);
+    core.selectObjectByName("Marker");
+    StelMovementMgr.setFlagTracking(true);
+    core.wait(stellarium_move_time);
+    // Point the telescope at it.
+    // TelescopeControl.slewTelescopeToSelectedObject(0)
+
+    end = new Date().getTime()
+    diff = (end_init-start_init)/1000
+    // Take some images with the rest of the time remaining
+    core.wait(dwell - diff);
+    core.debug("Grid Point "+new Date())
+
+  }
+}
+// Remove all the grid points.
+CustomObjectMgr.removeCustomObjects();
