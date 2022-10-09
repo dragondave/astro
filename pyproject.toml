@@ -10,6 +10,8 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 astropy = "^5.1"
+requests = "^2.28.1"
+lxml = "^4.9.1"
 
 [tool.poetry.dev-dependencies]
 

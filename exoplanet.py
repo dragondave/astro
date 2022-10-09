@@ -16,7 +16,7 @@ NOW = datetime.date.today()
 TODAY = NOW.isoformat()
 MONTH = (NOW + datetime.timedelta(days=30)).isoformat()
 
-CANNED = False
+CANNED = True
 if CANNED:
     with open('exo.html', 'r') as f:
         lines = f.readlines()
@@ -56,20 +56,39 @@ def parse_transit(html):
 
     root = lxml.html.fromstring(html)
     data = OrderedDict()
-    data['url'] = xpath(root, '//a/@href')
+    data['url'] = 'http://var2.astro.cz/ETD/' + xpath(root, '//a/@href')
     planet_name = xpath(root, '//a/text()')
     data['planet'] = planet_name.replace('\xa0', ' ')
     data['constellation'] = xpath(root, '//p/text()')
     tds = re.findall(r"<td class='center'>(.*?)</td>", html)
-    data['begin_time'], data['begin_elevation'], data['begin_dir'] = re.search('(.*)<br>(.*),(.*)', tds[0]).groups()
-    data['mid_time'], data['mid_elevation'], data['mid_dir'] = re.search('<b>(.*)<br>(.*),(.*)</b>', tds[1]).groups()
-    data['end_time'], data['end_elevation'], data['end_dir'] = re.search('(.*)<br>(.*),(.*)', tds[2]).groups()
+    
+    begin_time, begin_ele, begin_dir =  re.search('(.*)<br>(.*),(.*)', tds[0]).groups()
+    mid_time_date, mid_ele, mid_dir= re.search('<b>(.*)<br>(.*),(.*)</b>', tds[1]).groups()
+    end_time, end_ele, end_dir = re.search('(.*)<br>(.*),(.*)', tds[2]).groups()
+    data['date'], _, mid_time = mid_time_date.partition(". ")
+
+    data['begin_time'], data['mid_time'], data['end_time'] = begin_time, mid_time, end_time
+    data['begin_ele'], data['begin_dir'], data['mid_ele'], data['mid_dir'], data['end_ele'], data['end_dir'] = begin_ele, begin_dir, mid_ele, mid_dir, end_ele, end_dir
+
     data['duration'], data['mag'], data['delta-mag'] = tds[3:]
     span = re.search(r"<span style='font-size: 80%'>(.*?)</span>", html).group(1)
     data['elems'], data['ra'], data['dec'] = re.search('(.*)<br/>RA: (.*)<br/>DE: (.*)', span).groups()
     return data
 
-
+def format_transit(data):
+    day, month = map(int, data['date'].split("."))
+    year = NOW.year 
+    date = datetime.date(day=day, month=month, year=year)
+    if data['mid_time'].index(':') == 1:
+        print (f"midtime {data['mid_time']}, rewinding day")
+        date = date - datetime.timedelta(days=1)
+    data['date'] = datetime.datetime.strftime(date, "%d %b")
+    
+    data['mid_ele'] = data['mid_ele'].replace('\xb0', '')
+    
+    data['begin_ele'] = data['begin_ele'].replace('\xb0', '')
+    data['end_ele'] = data['end_ele'].replace('\xb0', '')
+    return data
 
 with open("exoplanets.csv", "w") as outfile:
     csvwriter = csv.writer(outfile)
@@ -80,4 +99,5 @@ with open("exoplanets.csv", "w") as outfile:
             csvwriter.writerow(dict(data))
             first = False
         if data:
+            data = format_transit(data)
             csvwriter.writerow(dict(data).values())
