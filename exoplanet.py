@@ -20,7 +20,7 @@ DUSK_TIME = datetime.time(hour=19, minute=30)
 END_CUTOFF_HOUR = 3
 ALT_MIN = 30
 
-CANNED = True
+CANNED = False
 if CANNED:
     with open('exo.html', 'r') as f:
         lines = f.readlines()
@@ -100,7 +100,8 @@ def score(data):
     print (f"magnitude {mag} score {mag_score}")
 
     # moon
-    print (end_score, dusk_score, dmag_score, alt_score, mag_score)
+    scores = [end_score, dusk_score, dmag_score, alt_score, mag_score]
+    print (scores)
     score = end_score * dusk_score * dmag_score * alt_score * mag_score
     print(score)
     data['score'] = f"{score:.3f}"
